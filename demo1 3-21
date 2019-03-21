@@ -1,0 +1,84 @@
+-----------------------------
+//example.h
+
+#include <iostream>
+using namespace std;
+class Example{
+    public:
+        void say_hello();
+};
+-----------------------------
+
+//example.cpp
+
+#include "example.h"
+
+void Example::say_hello(){
+    cout<<"hello"<<endl;
+}
+
+-----------------------------
+
+//example.i
+
+%module example
+%{
+#include "example.h"
+%}
+%include "example.h"
+
+-----------------------------
+
+//setup.py
+
+#!/usr/bin/env python
+
+"""
+setup.py file for SWIG C++/Python example
+"""
+from distutils.core import setup, Extension
+example_module = Extension('_example',
+                           sources=['example.cpp', 'example_wrap.cxx',],
+                           )
+setup (name = 'example',
+       version = '0.1',
+       author      = "Wangzuo",
+       description = """Simple swig C\+\+/Python example""",
+       ext_modules = [example_module],
+       py_modules = ["example"],
+       )
+
+----------------------------------------------------------
+终端运行如下命令： 
+chao@SHF-SERVER:~/Wangzuo$ swig -c++ -python example.i          //生成了两个文件：example_wrap.cxx, example.py
+chao@SHF-SERVER:~/Wangzuo$ python setup.py build_ext --inplace  //用distutils构建了example module
+running build_ext
+building '_example' extension
+x86_64-linux-gnu-gcc -pthread -DNDEBUG -g -fwrapv -O2 -Wall -Wstrict-prototypes -fno-strict-aliasing -Wdate-time -D_FORTIFY_SOURCE=2 -g -fdebug-prefix-map=/build/python2.7-3hk45v/python2.7-2.7.15~rc1=. -fstack-protector-strong -Wformat -Werror=format-security -fPIC -I/usr/include/python2.7 -c example.cpp -o build/temp.linux-x86_64-2.7/example.o
+cc1plus: warning: command line option ‘-Wstrict-prototypes’ is valid for C/ObjC but not for C++
+x86_64-linux-gnu-gcc -pthread -DNDEBUG -g -fwrapv -O2 -Wall -Wstrict-prototypes -fno-strict-aliasing -Wdate-time -D_FORTIFY_SOURCE=2 -g -fdebug-prefix-map=/build/python2.7-3hk45v/python2.7-2.7.15~rc1=. -fstack-protector-strong -Wformat -Werror=format-security -fPIC -I/usr/include/python2.7 -c example_wrap.cxx -o build/temp.linux-x86_64-2.7/example_wrap.o
+cc1plus: warning: command line option ‘-Wstrict-prototypes’ is valid for C/ObjC but not for C++
+x86_64-linux-gnu-g++ -pthread -shared -Wl,-O1 -Wl,-Bsymbolic-functions -Wl,-Bsymbolic-functions -Wl,-z,relro -fno-strict-aliasing -DNDEBUG -g -fwrapv -O2 -Wall -Wstrict-prototypes -Wdate-time -D_FORTIFY_SOURCE=2 -g -fdebug-prefix-map=/build/python2.7-3hk45v/python2.7-2.7.15~rc1=. -fstack-protector-strong -Wformat -Werror=format-security -Wl,-Bsymbolic-functions -Wl,-z,relro -Wdate-time -D_FORTIFY_SOURCE=2 -g -fdebug-prefix-map=/build/python2.7-3hk45v/python2.7-2.7.15~rc1=. -fstack-protector-strong -Wformat -Werror=format-security build/temp.linux-x86_64-2.7/example.o build/temp.linux-x86_64-2.7/example_wrap.o -o /home/chao/Wangzuo/_example.so
+chao@SHF-SERVER:~/Wangzuo$ python
+Python 2.7.15rc1 (default, Nov 12 2018, 14:31:15) 
+[GCC 7.3.0] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import example
+>>> example.Example().say_hello()
+hello
+>>> 
+成功利用SWIG完成对C++库的包装
+除利用distutils外还可以直接编译生成io文件：
+终端运行如下命令： 
+chao@SHF-SERVER:~/Wangzuo$ swig -c++ -python example.i
+chao@SHF-SERVER:~/Wangzuo$ g++ -shared -std=c++11 -fpic example.cpp example_wrap.cxx -I/usr/include/python2.7 -o _example.so
+chao@SHF-SERVER:~/Wangzuo$ python
+Python 2.7.15rc1 (default, Nov 12 2018, 14:31:15) 
+[GCC 7.3.0] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import example
+>>> example.Example().say_hello()
+hello
+>>> exit()
+
+

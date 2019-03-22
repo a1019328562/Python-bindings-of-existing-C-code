@@ -1,0 +1,48 @@
+//example.i
+%module example
+
+%{
+#define SWIG_FILE_WITH_INIT
+#include "example.h"
+%}
+
+double fact(int n);
+------------------------------------
+//example.h
+#include<string>
+#include<iostream>
+using namespace std;
+double fact(int n);
+------------------------------------
+//example.cpp
+#include<string>
+#include<iostream>
+#include "example.h"
+using namespace std;
+double fact(int n) {
+      string ss="Hello World";
+      for(int i=0;i<n;i++){
+      cout << ss <<endl;
+}
+return (double)n;
+}
+
+--------------------------------------
+//setup.py
+#!/usr/bin/env python
+
+"""
+setup.py file for SWIG C++/Python example
+"""
+from distutils.core import setup, Extension
+example_module = Extension('_example',
+                           sources=['example.cpp', 'example_wrap.cxx',],
+                           )
+setup (name = 'example',
+       version = '0.1',
+       author      = "Wangzuo",
+       description = """Simple swig C\+\+/Python example""",
+       ext_modules = [example_module],
+       py_modules = ["example"],
+       )
+-------------------------------------------

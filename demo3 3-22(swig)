@@ -5,7 +5,11 @@
 %{
 #define SWIG_FILE_WITH_INIT
 #include "example.h"
+extern char * const path="TEST";
 %}
+%immutable;
+extern char * const path="TEST";
+%mutable;
 
 double fact(int n);
 #define I_CONST       5               // An integer constant
@@ -15,8 +19,8 @@ double fact(int n);
 
 enum months {JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG,
              SEP, OCT, NOV, DEC};
-%constant double BLAH = 42.37;
 #define PI_4 PI/4
+
 ------------------------------------
 //example.h
 #ifndef EXAMPLE_H
@@ -27,7 +31,6 @@ using namespace std;
 double fact(int n);
 enum months {JAN, FEB, MAR, APR, MAY, JUN, JUL, AUG,
              SEP, OCT, NOV, DEC};
-const double BLAH = 42.37;
 #endif
 ------------------------------------
 //example.cpp
@@ -36,7 +39,6 @@ const double BLAH = 42.37;
 #include<string>
 #include<iostream>
 #include "example.h"
-
 double fact(int n) {
       string ss="Hello World";
       for(int i=0;i<n;i++){
@@ -45,7 +47,6 @@ double fact(int n) {
 return (double)n;
 }
 #endif
-
 --------------------------------------
 //setup.py
 #!/usr/bin/env python

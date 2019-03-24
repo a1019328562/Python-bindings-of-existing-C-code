@@ -1,0 +1,59 @@
+//example.i
+%module example
+%{
+#include "example.h"
+%}
+
+%include "std_vector.i"
+%include "std_string.i"
+
+// Instantiate templates used by example
+namespace std {
+   %template(IntVector) vector<int>;
+   %template(DoubleVector) vector<double>;
+   %template(StringVector) vector<string>;
+}
+
+
+// Include the header file with above prototypes
+void foo1(const std::vector<int> &X);
+void foo2(const std::vector<string>& X);
+------------------------------------
+//example.h
+#include <vector>
+#include <algorithm>
+#include <functional>
+#include <numeric>
+#include<string>
+#include<iostream>
+using namespace std;
+void foo1(const vector<int>& X){
+	for(int i=0;i<X.size();i++) cout << X[i] << " ";
+};
+void foo2(const vector<string>& X){
+	for(int i=0;i<X.size();i++) cout << X[i] << " ";
+};
+ 
+------------------------------------
+--------------------------------------
+-------------------------------------------
+终端运行如下代码：
+chao@SHF-SERVER:~/Wangzuo$ swig -c++ -python example.i
+chao@SHF-SERVER:~/Wangzuo$ g++ -shared -std=c++11 -fpic example.h example_wrap.cxx -I/usr/include/python2.7 -o _example.so
+chao@SHF-SERVER:~/Wangzuo$ python
+Python 2.7.15rc1 (default, Nov 12 2018, 14:31:15) 
+[GCC 7.3.0] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import example
+>>> a=example.StringVector("W")
+>>> b=example.IntVector(1)
+>>> b[0]=3
+>>> a.append("ang")
+>>> b.append(55)
+>>> foo1(b)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+NameError: name 'foo1' is not defined
+>>> example.foo1(b)
+3 55 >>> example.foo2(a)
+W ang >>> 

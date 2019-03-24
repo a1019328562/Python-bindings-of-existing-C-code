@@ -6,7 +6,7 @@
 
 %include "std_vector.i"
 %include "std_string.i"
-
+%apply const std::string& {std::string*};
 // Instantiate templates used by example
 namespace std {
    %template(IntVector) vector<int>;
@@ -14,10 +14,12 @@ namespace std {
    %template(StringVector) vector<string>;
 }
 
-
-// Include the header file with above prototypes
-void foo1(const std::vector<int> &X);
-void foo2(const std::vector<string>& X);
+class DB{
+	public: 
+	int name;
+	void foo1(const std::vector<int>& X);
+	void foo2(const std::vector<std::string>& X);
+};
 ------------------------------------
 //example.h
 #include <vector>
@@ -27,11 +29,15 @@ void foo2(const std::vector<string>& X);
 #include<string>
 #include<iostream>
 using namespace std;
-void foo1(const vector<int>& X){
-	for(int i=0;i<X.size();i++) cout << X[i] << " ";
+class DB{
+	public:
+	int name;
+	void foo1(const vector<int>& X){
+	for(int i=0;i<X.size();i++) cout << X[i] <<endl;
 };
-void foo2(const vector<string>& X){
-	for(int i=0;i<X.size();i++) cout << X[i] << " ";
+	void foo2(const vector<string>& X){
+	for(int i=0;i<X.size();i++) cout << X[i] << endl;
+};
 };
  
 ------------------------------------
@@ -45,15 +51,12 @@ Python 2.7.15rc1 (default, Nov 12 2018, 14:31:15)
 [GCC 7.3.0] on linux2
 Type "help", "copyright", "credits" or "license" for more information.
 >>> import example
->>> a=example.StringVector("W")
->>> b=example.IntVector(1)
->>> b[0]=3
->>> a.append("ang")
->>> b.append(55)
->>> foo1(b)
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-NameError: name 'foo1' is not defined
->>> example.foo1(b)
-3 55 >>> example.foo2(a)
-W ang >>> 
+>>> a=example.DB()
+>>> Vec=example.StringVector()
+>>> Vec.append("Test")
+>>> Vec.append("String")
+>>> a.foo2(Vec)
+Test
+String
+>>> 
+

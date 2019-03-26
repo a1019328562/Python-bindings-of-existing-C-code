@@ -1,0 +1,106 @@
+-----------------------------------------------------------
+//DolphinDB.i
+%module DolphinDB
+%{
+#include "DolphinDB.h"
+#include "Types.h"
+#include "SmartPointer.h"
+#include "Exceptions.h"
+#include "SysIO.h"
+class Constant;
+%}
+%include "std_string.i"
+%include "std_vector.i"
+
+%import "Types.h"
+%import "SmartPointer.h"
+namespace std 
+{
+    %template(StringVector) vector<string>;
+}
+%apply const std::string& {std::string*};
+namespace dolphindb{
+%template(ConstantSP) SmartPointer<Constant>;
+typedef SmartPointer<Constant> ConstantSP;
+class DBConnection{
+    	public:
+	DBConnection();
+	~DBConnection();
+	bool connect(const std::string& hostName, int port, const std::string& userId, const std::string &password);
+
+
+	void login(const std::string& userId, const std::string& password, bool enableEncryption);
+
+	ConstantSP run(const string& script);
+	void close();
+	
+	static void initialize();
+	
+
+};
+}
+%inline%{
+namespace dolphindb{
+int run_int(const std::string& script){
+	dolphindb::DBConnection conn;
+	std::cout<<"Failed to connect to the server\n";
+    	bool ret = conn.connect("192.168.1.201", 8848);
+    	if(!ret){
+        std::cout<<"Failed to connect to the server\n";
+        return 0;
+    }
+	dolphindb::ConstantSP it=conn.run(script);
+	return it->getInt();
+}
+}
+%}
+--------------------------------------------------------------------
+//DolphinDB.h
+--------------------------------------------------------------------
+终端命令如下：
+chao@SHF-SERVER:~/Wangzuo$ swig -c++ -python DolphinDB.i
+SmartPointer.h:71: Warning 362: operator= ignored
+chao@SHF-SERVER:~/Wangzuo$ g++ -DLINUX -D_GLIBCXX_USE_CXX11_ABI=0 DolphinDB_wrap.cxx DolphinDB.h  -shared -std=c++11  -fpic -L. -ldolphindbAPI -luuid  -I/usr/include/python2.7 -I/home/chao/Wangzuo/api_cpp/include   -o _DolphinDB.so
+In file included from DolphinDB.h:21:0,
+                 from DolphinDB_wrap.cxx:3133:
+SmartPointer.h: In instantiation of ‘void dolphindb::SmartPointer<T>::clear() [with T = Constant]’:
+DolphinDB_wrap.cxx:8233:17:   required from here
+SmartPointer.h:90:4: warning: possible problem detected in invocation of delete operator: [-Wdelete-incomplete]
+    delete (T*)oldCounter->p_;
+    ^~~~~~
+SmartPointer.h:90:27: warning: invalid use of incomplete type ‘class Constant’
+    delete (T*)oldCounter->p_;
+               ~~~~~~~~~~~~^~
+DolphinDB_wrap.cxx:3138:7: note: forward declaration of ‘class Constant’
+ class Constant;
+       ^~~~~~~~
+In file included from DolphinDB.h:21:0,
+                 from DolphinDB_wrap.cxx:3133:
+SmartPointer.h:90:4: note: neither the destructor nor the class-specific operator delete will be called, even if they are declared when the class is defined
+    delete (T*)oldCounter->p_;
+    ^~~~~~
+SmartPointer.h: In instantiation of ‘dolphindb::SmartPointer<T>::~SmartPointer() [with T = Constant]’:
+DolphinDB_wrap.cxx:8320:10:   required from here
+SmartPointer.h:109:4: warning: possible problem detected in invocation of delete operator: [-Wdelete-incomplete]
+    delete static_cast<T*>(counterP_->p_);
+    ^~~~~~
+SmartPointer.h:109:38: warning: invalid use of incomplete type ‘class Constant’
+    delete static_cast<T*>(counterP_->p_);
+                           ~~~~~~~~~~~^~
+DolphinDB_wrap.cxx:3138:7: note: forward declaration of ‘class Constant’
+ class Constant;
+       ^~~~~~~~
+In file included from DolphinDB.h:21:0,
+                 from DolphinDB_wrap.cxx:3133:
+SmartPointer.h:109:4: note: neither the destructor nor the class-specific operator delete will be called, even if they are declared when the class is defined
+    delete static_cast<T*>(counterP_->p_);
+    ^~~~~~
+chao@SHF-SERVER:~/Wangzuo$ python
+Python 2.7.15rc1 (default, Nov 12 2018, 14:31:15) 
+[GCC 7.3.0] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import DolphinDB
+>>> DolphinDB.run_int("1+1")
+Failed to connect to the server
+2
+

@@ -51,34 +51,70 @@ class DBConnection{
 %inline%{
 
 namespace dolphindb{
-	void np_int(int *out_array, int size_out,ConstantSP p){
-		int segmentSize = p->getSegmentSize();
-    		int **segments = (int **) p->getDataSegment();
-    		INDEX start = 0;
-    		int segmentId = 0;
-    		while (start < size_out) {
-        		int *block = segments[segmentId];
-       			int blockSize = std::min(segmentSize, size_out - start);
-			memcpy(out_array+start,block,blockSize*sizeof(int));
-        		start += blockSize;
-        		segmentId++;
-    		}	
-	}
-	void np_double(double *out_array, int size_out,ConstantSP p){
-		int segmentSize = p->getSegmentSize();
-    		double **segments = (double **) p->getDataSegment();
-    		INDEX start = 0;
-    		int segmentId = 0;
-    		while (start < size_out) {
-        		double *block = segments[segmentId];
-       			int blockSize = std::min(segmentSize, size_out - start);
-			memcpy(out_array+start,block,blockSize*sizeof(double));
-        		start += blockSize;
-        		segmentId++;
-    		}	
-	}
+	void np_int(int *out_array, int size_out,ConstantSP p){p->getInt(0,size_out,out_array);}
 	DATA_TYPE getType(ConstantSP p){return DATA_TYPE(p->getType());}
 	int Size(ConstantSP p){return p->size();}
 	DATA_FORM getForm(ConstantSP p){return DATA_FORM(p->getForm());}
 }
 %}
+//终端运行如下代码：
+chao@SHF-SERVER:~/Wangzuo$ swig -c++ -python DolphinDB.i
+SmartPointer.h:71: Warning 362: operator= ignored
+chao@SHF-SERVER:~/Wangzuo$ g++ -DLINUX -D_GLIBCXX_USE_CXX11_ABI=0 DolphinDB_wrap.cxx DolphinDB.h  -shared -std=c++11  -fpic -L. -ldolphindbAPI -luuid  -I/usr/include/python3.7 -I/home/chao/Wangzuo/api_cpp/include  -I/usr/lib/python3/dist-packages/numpy/core/include  -o _DolphinDB.so
+In file included from DolphinDB.h:21:0,
+                 from DolphinDB_wrap.cxx:3133:
+SmartPointer.h: In instantiation of ‘void dolphindb::SmartPointer<T>::clear() [with T = Constant]’:
+DolphinDB_wrap.cxx:8716:17:   required from here
+SmartPointer.h:90:4: warning: possible problem detected in invocation of delete operator: [-Wdelete-incomplete]
+    delete (T*)oldCounter->p_;
+    ^~~~~~
+SmartPointer.h:90:27: warning: invalid use of incomplete type ‘class Constant’
+    delete (T*)oldCounter->p_;
+               ~~~~~~~~~~~~^~
+DolphinDB_wrap.cxx:3138:7: note: forward declaration of ‘class Constant’
+ class Constant;
+       ^~~~~~~~
+In file included from DolphinDB.h:21:0,
+                 from DolphinDB_wrap.cxx:3133:
+SmartPointer.h:90:4: note: neither the destructor nor the class-specific operator delete will be called, even if they are declared when the class is defined
+    delete (T*)oldCounter->p_;
+    ^~~~~~
+SmartPointer.h: In instantiation of ‘dolphindb::SmartPointer<T>::~SmartPointer() [with T = Constant]’:
+DolphinDB_wrap.cxx:8803:10:   required from here
+SmartPointer.h:109:4: warning: possible problem detected in invocation of delete operator: [-Wdelete-incomplete]
+    delete static_cast<T*>(counterP_->p_);
+    ^~~~~~
+SmartPointer.h:109:38: warning: invalid use of incomplete type ‘class Constant’
+    delete static_cast<T*>(counterP_->p_);
+                           ~~~~~~~~~~~^~
+DolphinDB_wrap.cxx:3138:7: note: forward declaration of ‘class Constant’
+ class Constant;
+       ^~~~~~~~
+In file included from DolphinDB.h:21:0,
+                 from DolphinDB_wrap.cxx:3133:
+SmartPointer.h:109:4: note: neither the destructor nor the class-specific operator delete will be called, even if they are declared when the class is defined
+    delete static_cast<T*>(counterP_->p_);
+    ^~~~~~
+chao@SHF-SERVER:~/Wangzuo$ python3
+Python 3.6.7 (default, Oct 22 2018, 11:32:17) 
+[GCC 8.2.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import DolphinD 
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ModuleNotFoundError: No module named 'DolphinD'
+>>> import DolphinDB 
+>>> import DolphinDB as ddb
+>>> import getData as gt
+>>> import numpy as np
+>>> s=ddb.DBConnection()
+>>> s.initialize()
+>>> s.connect("192.168.1.201", 8848,"","")
+True
+>>> ss="1..10000"
+>>> p=s.run(ss)
+>>> x=np.zeros((10000,),dtype=np.int32)
+>>> ddb.np_int(x,p)
+>>> x
+array([    1,     2,     3, ...,  9998,  9999, 10000], dtype=int32)
+

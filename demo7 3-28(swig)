@@ -1,0 +1,84 @@
+//DolphinDB.i
+%module DolphinDB
+%{
+#define SWIG_FILE_WITH_INIT
+#include "DolphinDB.h"
+#include "Types.h"
+#include "SmartPointer.h"
+#include "Exceptions.h"
+#include "SysIO.h"
+class Constant;
+%}
+%include "std_string.i"
+%include "std_vector.i"
+
+%import "Types.h"
+%import "SmartPointer.h"
+%include "numpy.i"
+%init %{
+    import_array();
+%}
+%apply (int* IN_ARRAY1, int DIM1) {(int * in_array, int size_in)}
+%apply (int* INPLACE_ARRAY1, int DIM1) {(int * out_array, int size_out)}
+
+%apply (double* IN_ARRAY1, int DIM1) {(double * in_array, int size_in)}
+%apply (double* INPLACE_ARRAY1, int DIM1) {(double * out_array, int size_out)}
+namespace std 
+{
+    %template(StringVector) vector<string>;
+}
+%apply const std::string& {std::string*};
+namespace dolphindb{
+%template(ConstantSP) SmartPointer<Constant>;
+typedef SmartPointer<Constant> ConstantSP;
+class DBConnection{
+    	public:
+	DBConnection();
+	~DBConnection();
+	bool connect(const std::string& hostName, int port, const std::string& userId, const std::string &password);
+
+
+	void login(const std::string& userId, const std::string& password, bool enableEncryption);
+
+	ConstantSP run(const std::string& script);
+	void close();
+	
+	static void initialize();
+	
+
+};
+}
+%inline%{
+
+namespace dolphindb{
+	void np_int(int *out_array, int size_out,ConstantSP p){
+		int segmentSize = p->getSegmentSize();
+    		int **segments = (int **) p->getDataSegment();
+    		INDEX start = 0;
+    		int segmentId = 0;
+    		while (start < size_out) {
+        		int *block = segments[segmentId];
+       			int blockSize = std::min(segmentSize, size_out - start);
+			memcpy(out_array+start,block,blockSize*sizeof(int));
+        		start += blockSize;
+        		segmentId++;
+    		}	
+	}
+	void np_double(double *out_array, int size_out,ConstantSP p){
+		int segmentSize = p->getSegmentSize();
+    		double **segments = (double **) p->getDataSegment();
+    		INDEX start = 0;
+    		int segmentId = 0;
+    		while (start < size_out) {
+        		double *block = segments[segmentId];
+       			int blockSize = std::min(segmentSize, size_out - start);
+			memcpy(out_array+start,block,blockSize*sizeof(double));
+        		start += blockSize;
+        		segmentId++;
+    		}	
+	}
+	DATA_TYPE getType(ConstantSP p){return DATA_TYPE(p->getType());}
+	int Size(ConstantSP p){return p->size();}
+	DATA_FORM getForm(ConstantSP p){return DATA_FORM(p->getForm());}
+}
+%}

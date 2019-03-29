@@ -1,0 +1,62 @@
+//CMakeLists.txt
+cmake_minimum_required(VERSION 2.8.12)
+project(example)
+
+add_subdirectory(pybind11)
+pybind11_add_module(example example.cpp)
+--------------------------------------------
+//example.cpp
+#include <pybind11/pybind11.h>
+
+namespace py = pybind11;
+struct Pet {
+    Pet(const std::string &name) : name(name) { }
+    void setName(const std::string &name_) { name = name_; }
+    const std::string &getName() const { return name; }
+
+    std::string name;
+};
+PYBIND11_MODULE(example, m) {
+    py::class_<Pet>(m, "Pet")
+        .def(py::init<const std::string &>())
+        .def("setName", &Pet::setName)
+        .def("getName", &Pet::getName)
+		.def("__repr__",
+			[](const Pet &a) {
+				return "<example.Pet named '"+a.name+"'>";
+			}	
+	);
+}
+---------------------------------------------------
+在example.cpp文件目录下运行如下终端命令：
+chao@SHF-SERVER:~/Wangzuo$ cmake .
+-- The C compiler identification is GNU 7.3.0
+-- The CXX compiler identification is GNU 7.3.0
+-- Check for working C compiler: /usr/bin/cc
+-- Check for working C compiler: /usr/bin/cc -- works
+-- Detecting C compiler ABI info
+-- Detecting C compiler ABI info - done
+-- Detecting C compile features
+-- Detecting C compile features - done
+-- Check for working CXX compiler: /usr/bin/c++
+-- Check for working CXX compiler: /usr/bin/c++ -- works
+-- Detecting CXX compiler ABI info
+-- Detecting CXX compiler ABI info - done
+-- Detecting CXX compile features
+-- Detecting CXX compile features - done
+-- Found PythonInterp: /usr/bin/python3.7 (found version "3.7.1") 
+-- Found PythonLibs: /usr/lib/x86_64-linux-gnu/libpython3.7m.so
+-- Performing Test HAS_CPP14_FLAG
+-- Performing Test HAS_CPP14_FLAG - Success
+-- pybind11 v2.3.dev0
+-- Performing Test HAS_FLTO
+-- Performing Test HAS_FLTO - Success
+-- LTO enabled
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /home/chao/Wangzuo
+chao@SHF-SERVER:~/Wangzuo$ make
+Scanning dependencies of target example
+[ 50%] Building CXX object CMakeFiles/example.dir/example.cpp.o
+[100%] Linking CXX shared module example.cpython-37m-x86_64-linux-gnu.so
+[100%] Built target example

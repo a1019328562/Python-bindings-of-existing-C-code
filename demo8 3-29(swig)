@@ -1,0 +1,148 @@
+//DolphinDB.i
+%module DolphinDB
+%{
+#define SWIG_FILE_WITH_INIT
+#include "DolphinDB.h"
+#include "Types.h"
+#include "SmartPointer.h"
+#include "Exceptions.h"
+#include <time.h>
+#include "SysIO.h"
+class Constant;
+%}
+%include "std_string.i"
+%include "std_vector.i"
+
+%import "Types.h"
+%import "SmartPointer.h"
+%include "numpy.i"
+%init %{
+    import_array();
+%}
+%apply (int* IN_ARRAY1, int DIM1) {(int * in_array, int size_in)}
+%apply (int* INPLACE_ARRAY1, int DIM1) {(int * out_array, int size_out)}
+
+%apply (double* IN_ARRAY1, int DIM1) {(double * in_array, int size_in)}
+%apply (double* INPLACE_ARRAY1, int DIM1) {(double * out_array, int size_out)}
+namespace std 
+{
+    %template(StringVector) vector<string>;
+}
+%apply const std::string& {std::string*};
+namespace dolphindb{
+%template(ConstantSP) SmartPointer<Constant>;
+typedef SmartPointer<Constant> ConstantSP;
+class DBConnection{
+    	public:
+	DBConnection();
+	~DBConnection();
+	bool connect(const std::string& hostName, int port, const std::string& userId, const std::string &password);
+
+
+	void login(const std::string& userId, const std::string& password, bool enableEncryption);
+
+	ConstantSP run(const std::string& script);
+	void close();
+	
+	static void initialize();
+	
+
+};
+}
+%inline%{
+#include <chrono>
+namespace dolphindb{
+	
+	void np_int(int *out_array, int size_out,ConstantSP p){
+			std::chrono::system_clock::time_point start = std::chrono::system_clock::now();
+			p->getInt(0,size_out,out_array);
+			std::chrono::system_clock::time_point ends = std::chrono::system_clock::now();
+			std::chrono::duration<double> diff = ends-start;
+			std::cout << diff.count() <<std::endl;
+		}
+	void np_double(double *out_array, int size_out,ConstantSP p){p->getDouble(0,size_out,out_array);}
+	DATA_TYPE getType(ConstantSP p){return DATA_TYPE(p->getType());}
+	int Size(ConstantSP p){return p->size();}
+	DATA_FORM getForm(ConstantSP p){return DATA_FORM(p->getForm());}
+	
+}
+%}
+---------------------------------------------------------------------------------------------------
+//DolphinDB.h
+---------------------------------------------------------------------------------------------------
+终端运行如下代码：
+chao@SHF-SERVER:~/Wangzuo/lib$ swig -c++ -python DolphinDB.i
+SmartPointer.h:71: Warning 362: operator= ignored
+chao@SHF-SERVER:~/Wangzuo/lib$ g++ -DLINUX -D_GLIBCXX_USE_CXX11_ABI=0 DolphinDB_wrap.cxx DolphinDB.h  -shared -std=c++11  -fpic -L. -ldolphindbAPI -luuid  -I/usr/include/python3.7 -I/home/chao/Wangzuo/api_cpp/include  -I/usr/lib/python3/dist-packages/numpy/core/include  -o _DolphinDB.so
+In file included from DolphinDB.h:21:0,
+                 from DolphinDB_wrap.cxx:3133:
+SmartPointer.h: In instantiation of ‘void dolphindb::SmartPointer<T>::clear() [with T = Constant]’:
+DolphinDB_wrap.cxx:8726:17:   required from here
+SmartPointer.h:90:4: warning: possible problem detected in invocation of delete operator: [-Wdelete-incomplete]
+    delete (T*)oldCounter->p_;
+    ^~~~~~
+SmartPointer.h:90:27: warning: invalid use of incomplete type ‘class Constant’
+    delete (T*)oldCounter->p_;
+               ~~~~~~~~~~~~^~
+DolphinDB_wrap.cxx:3139:7: note: forward declaration of ‘class Constant’
+ class Constant;
+       ^~~~~~~~
+In file included from DolphinDB.h:21:0,
+                 from DolphinDB_wrap.cxx:3133:
+SmartPointer.h:90:4: note: neither the destructor nor the class-specific operator delete will be called, even if they are declared when the class is defined
+    delete (T*)oldCounter->p_;
+    ^~~~~~
+SmartPointer.h: In instantiation of ‘dolphindb::SmartPointer<T>::~SmartPointer() [with T = Constant]’:
+DolphinDB_wrap.cxx:8813:10:   required from here
+SmartPointer.h:109:4: warning: possible problem detected in invocation of delete operator: [-Wdelete-incomplete]
+    delete static_cast<T*>(counterP_->p_);
+    ^~~~~~
+SmartPointer.h:109:38: warning: invalid use of incomplete type ‘class Constant’
+    delete static_cast<T*>(counterP_->p_);
+                           ~~~~~~~~~~~^~
+DolphinDB_wrap.cxx:3139:7: note: forward declaration of ‘class Constant’
+ class Constant;
+       ^~~~~~~~
+In file included from DolphinDB.h:21:0,
+                 from DolphinDB_wrap.cxx:3133:
+SmartPointer.h:109:4: note: neither the destructor nor the class-specific operator delete will be called, even if they are declared when the class is defined
+    delete static_cast<T*>(counterP_->p_);
+    ^~~~~~
+chao@SHF-SERVER:~/Wangzuo/lib$ python3
+Python 3.6.7 (default, Oct 22 2018, 11:32:17) 
+[GCC 8.2.0] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> import DolphinDB as ddb
+>>> import getData as gt
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ModuleNotFoundError: No module named 'getData'
+>>> import numpy as np
+>>> import time
+>>> import datetime
+>>> s=ddb.DBConnection()
+>>> s.initialize()
+>>> s.connect("192.168.1.201", 8848,"","")
+True
+>>> ss="1..10000000"
+>>> 
+>>> x=np.zeros((10000000,),dtype=np.int32)
+>>> s_tt=time.time()
+>>> s_tc=time.clock()
+>>> s_dd= datetime.datetime.now()
+>>> p=s.run(ss)
+>>> ddb.np_int(x,p)
+0.0122968
+>>> e_dd=datetime.datetime.now()
+>>> e_tc=time.clock()
+>>> e_tt=time.time()
+>>> dur=e_dd-s_dd
+>>> print('time.time() Running time:'+str(e_tt-s_tt)+'sec\n')
+time.time() Running time:0.0487673282623291sec
+
+>>> print('time.clock() Running time:'+str(e_tc-s_tc)+'sec\n')
+time.clock() Running time:0.03764200000000001sec
+
+>>> print('datetime.datetime.now() Running time:'+str(dur)+'\n')
+datetime.datetime.now() Running time:0:00:00.048514
+
